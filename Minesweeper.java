@@ -5,6 +5,8 @@ import javax.swing.Timer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.MouseEvent;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -230,37 +232,58 @@ public class Minesweeper extends JFrame{
     	// timer
     	
     	JTextField tf = new JTextField(8);
-    	tf.setEditable(true);
-    	Timer t = new Timer(1000, new ActionListener() {
-    		private int hours;
-    		private int minutes;
-    		private int seconds;
-    		private String hour;
-    		private String minute;
-    		private String second;
-    		public void actionPerformed(ActionEvent e) {
-    		    NumberFormat formatter = new DecimalFormat("00");
-    		    if (seconds == N) {
-    		        seconds = 00;
-    		        minutes++;
-    		    }
- 		        if (minutes == N) {
- 		            minutes = 00;
-    		        hours++;
-    		    }
-    		    hour = formatter.format(hours);
-    		    minute = formatter.format(minutes);
-    		    second = formatter.format(seconds);
-    		    tf.setText(String.valueOf(hour + ":" + minute + ":" + second));
-    		    seconds++;
-    		}
-    	});
-    	t.setInitialDelay(0);
-    	mb.add(tf);
+    	tf.setEditable(false);
 
+    	ActionListener ClockListener = new ActionListener() {
+    	    private int hours;
+    	    private int minutes;
+    	    private int seconds;
+    	    private String hour;
+    	    private String minute;
+    	    private String second;
+    	    public void actionPerformed(ActionEvent e) {
+    	        NumberFormat formatter = new DecimalFormat("00");
+    	        if (seconds == N) {
+    	            seconds = 00;
+    	            minutes++;
+    	        }
+
+    	        if (minutes == N) {
+    	            minutes = 00;
+    	            hours++;
+    	        }
+    	        hour = formatter.format(hours);
+    	        minute = formatter.format(minutes);
+    	        second = formatter.format(seconds);
+    	        tf.setText(String.valueOf(hour + ":" + minute + ":" + second));
+    	        seconds++;
+    	    }
+    	};
+    	
+    	Timer t = new Timer(1000, ClockListener);
+    	
+    	
+        final JToggleButton b = new JToggleButton("start");
+        b.addItemListener(new ItemListener() {
+
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                if (b.isSelected()) {
+                    t.start();
+                    b.setText("stop");
+                } else {
+                    t.stop();
+                    b.setText("start");
+                }
+            }
+        });
+        
+    	t.setInitialDelay(0);
+    	
+    	mb.add(tf);
+    	mb.add(b);
     	frame.add(mb, BorderLayout.NORTH);
-    	
-    	
+
     	
     	
     	
@@ -439,6 +462,7 @@ public class Minesweeper extends JFrame{
             cell.setForeground(Color.RED);
             cell.reveal();
             revealBoardAndDisplay("You clicked on a mine!");
+            
         }
 //여러칸이 열리는 기능        
 //        if (cell.getValue() == 0) {
@@ -459,9 +483,12 @@ public class Minesweeper extends JFrame{
     private void revealBoardAndDisplay(String message) {
         for (int row = 0; row < Row; row++) {
             for (int col = 0; col < Col; col++) {
-            //    if (!cells[row][col].isEnabled()) {
-                    cells[row][col].reveal();
-            //    }
+
+        	    if(cells[row][col].isAMine()) {
+        	    	cells[row][col].reveal();
+        	    }
+                cells[row][col].setEnabled(true);
+
            }
         }
        
@@ -471,7 +498,7 @@ public class Minesweeper extends JFrame{
                 JOptionPane.ERROR_MESSAGE
         );
 
-        createMines();
+       // createMines();
     }
 
     private void cascade(Set<Cell> positionsToClear) {
