@@ -170,26 +170,33 @@ public class Minesweeper extends JFrame{
     	JMenuBar mb = new JMenuBar();
     	JMenu gameMenu = new JMenu("게임");
     	JMenu fileMenu = new JMenu("파일");
+    	JMenu lookMenu = new JMenu("보기");
     	JMenuItem ng = new JMenuItem("새 게임");
     	JMenuItem ls = new JMenuItem("레벨 선택");
     	JMenuItem sv = new JMenuItem("저장");
     	JMenuItem op = new JMenuItem("불러오기");
-    	
-    	JButton mineNum = new JButton("지뢰수 : " + realMineNum);
-    	mineNum.setEnabled(false);
-    	
+    	JMenuItem cc = new JMenuItem("색상 변경");
+
     	gameMenu.add(ng);
     	gameMenu.add(ls);
     	fileMenu.add(sv);
     	fileMenu.add(op);
+    	lookMenu.add(cc);
+    	
     	mb.add(gameMenu);
     	mb.add(fileMenu);
+      	mb.add(lookMenu);
+      	
+    	JButton mineNum = new JButton("지뢰수 : " + realMineNum);
+    	mineNum.setEnabled(false);
     	mb.add(mineNum);
-
+  
+    	
  
     	// timer
     	
     	JTextField countText = new JTextField(8);
+    	countText.setText("시작버튼을 누르세요.");
     	countText.setEditable(false);
 
     	Timer t = new Timer(1000, new ActionListener() {
@@ -306,6 +313,18 @@ public class Minesweeper extends JFrame{
 			}
 		};
 		op.addActionListener(open);
+		
+		// menu - change color
+		ActionListener changeColor = new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+		        for (int row = 0; row < Row; row++) {
+		            for (int col = 0; col < Col; col++) {
+		                cells[row][col].setBackground(Color.WHITE);
+		            }
+		        }
+			}
+		};
+		cc.addActionListener(changeColor);
 
     }
     
