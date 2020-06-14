@@ -24,6 +24,7 @@ public class Minesweeper extends JFrame{
     private static final int SIZE30 = 900;
     private static int realMineNum = 0;
     private static final int N = 60;
+    private static int stop = 0;
 
     // This fixed amount of memory is to avoid repeatedly declaring
     // new arrays every time a cell's neighbours are to be retrieved.
@@ -75,10 +76,11 @@ public class Minesweeper extends JFrame{
         void reveal() {
             setEnabled(false);
             if(isAMine()) {
-            	setText("X");
+            	setText(" ");
             	setBackground(Color.RED);
             }else {
             	setText(String.valueOf(value));
+            	setForeground(Color.GRAY);
             }
             
         }
@@ -137,15 +139,13 @@ public class Minesweeper extends JFrame{
         public int hashCode() {
             return Objects.hash(row, col);
         }
-        
-        
-    
+
     }
     
 
-    
     private Minesweeper(final int Row, final int Col){
     
+    	stop = 0;
         this.Row = Row;
         this.Col = Col;
         cells = new Cell[Row][Col];
@@ -194,14 +194,13 @@ public class Minesweeper extends JFrame{
         			realMineNum ++;
         		}
         	}
-        }   
-        System.out.println(realMineNum);
-        
+        }          
         
         makeMenu();
         
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+        
     }
   
 
@@ -226,22 +225,24 @@ public class Minesweeper extends JFrame{
     	mb.add(fileMenu);
     	mb.add(mineNum);
 
-    	
-    	
-    	
+ 
     	// timer
     	
     	JTextField tf = new JTextField(8);
     	tf.setEditable(false);
 
-    	ActionListener ClockListener = new ActionListener() {
+    	
+    	
+    	Timer t = new Timer(1000, new ActionListener() {
     	    private int hours;
     	    private int minutes;
     	    private int seconds;
     	    private String hour;
     	    private String minute;
     	    private String second;
+    	    
     	    public void actionPerformed(ActionEvent e) {
+
     	        NumberFormat formatter = new DecimalFormat("00");
     	        if (seconds == N) {
     	            seconds = 00;
@@ -257,17 +258,21 @@ public class Minesweeper extends JFrame{
     	        second = formatter.format(seconds);
     	        tf.setText(String.valueOf(hour + ":" + minute + ":" + second));
     	        seconds++;
+    	        
+    	        if(stop == 1) {
+    	        	seconds--;
+    	        }
     	    }
-    	};
+    	    
+    	});
     	
-    	Timer t = new Timer(1000, ClockListener);
-    	
-    	
+
         final JToggleButton b = new JToggleButton("start");
         b.addItemListener(new ItemListener() {
 
-            @Override
+        	@Override
             public void itemStateChanged(ItemEvent e) {
+            
                 if (b.isSelected()) {
                     t.start();
                     b.setText("stop");
@@ -275,18 +280,17 @@ public class Minesweeper extends JFrame{
                     t.stop();
                     b.setText("start");
                 }
+
             }
         });
         
     	t.setInitialDelay(0);
-    	
+
     	mb.add(tf);
     	mb.add(b);
     	frame.add(mb, BorderLayout.NORTH);
+    	
 
-    	
-    	
-    	
     	// menu - levelSelect
 		ActionListener levelSelect = new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -387,6 +391,8 @@ public class Minesweeper extends JFrame{
 			hard.addActionListener(openHard);
 
 	    };
+	    
+
 	}
     
     private void initializeGrid() {
@@ -456,12 +462,12 @@ public class Minesweeper extends JFrame{
 
     
     private void handleCell(Cell cell) {
-    
-    
         if (cell.isAMine()) {
             cell.setForeground(Color.RED);
             cell.reveal();
+            stop = 1;
             revealBoardAndDisplay("You clicked on a mine!");
+            
             
         }
 //여러칸이 열리는 기능        
@@ -475,8 +481,6 @@ public class Minesweeper extends JFrame{
         }  
         
         checkForWin();    
-        
-        
     }
     
 
@@ -491,14 +495,16 @@ public class Minesweeper extends JFrame{
 
            }
         }
-       
 
         JOptionPane.showMessageDialog(
                 frame, message, "Game Over",
                 JOptionPane.ERROR_MESSAGE
         );
 
-       // createMines();
+       // createMines();    
+        
+        
+             
     }
 
     private void cascade(Set<Cell> positionsToClear) {
@@ -541,14 +547,17 @@ public class Minesweeper extends JFrame{
                     frame, "You have won!", "Congratulations",
                     JOptionPane.INFORMATION_MESSAGE
             );
+            stop = 1;
         }
+
     }
 
 
     public static void main(String[] args) {
         final int Row = 10;
         final int Col = 10;
-
+        
         new Minesweeper(Row, Col);
+
     }
 }
