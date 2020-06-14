@@ -1,13 +1,13 @@
 package LandMineSearch;
 import javax.swing.*;
 import javax.swing.Timer;
-
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.MouseEvent;
+import java.io.*;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.awt.event.MouseAdapter;
@@ -320,7 +320,17 @@ public class Minesweeper extends JFrame{
 		// menu - save
 		ActionListener save = new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-			
+				
+				try {
+					File myObj = new File("C:\\Users\\Suemin\\Minesweeper_play.dat");
+					if(myObj.createNewFile()) {
+						System.out.println("Game saved: " + myObj.getName());
+					} else {
+						System.out.println("Game saved.");
+					}
+				}catch(IOException e1) {
+					
+				}
 			}
 		};
 		sv.addActionListener(save);
@@ -436,8 +446,13 @@ public class Minesweeper extends JFrame{
         for (int row = 0; row < Row; row++) {
             for (int col = 0; col < Col; col++) {
               positions.add(row * Row + col);
-              //positions.add(row * Row + col * Col);
             }
+          
+        }
+        for(int col = 0; col < Col; col++) {
+        	for(int row = 0; row < Row; row++) {
+        		positions.add(col * Col + row);
+        	}
         }
 
         // Initialize mines
