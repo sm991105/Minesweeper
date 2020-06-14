@@ -2,33 +2,20 @@ package LandMineSearch;
 import javax.swing.*;
 import javax.swing.Timer;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.io.*;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
-import java.awt.event.MouseAdapter;
+import java.text.*;
 import java.util.*;
 
-
 public class Minesweeper extends JFrame{
-    // The value assigned to cells marked as mines. 10 works
-    // because no cell will have more than 8 neighbouring mines.
-    private static final int MINE = 10;
-    // The size in pixels for the frame.
     private static final int SIZE10 = 500;
     private static final int SIZE20 = 700;
     private static final int SIZE30 = 900;
+    private static final int MINE = 10;
     private static int realMineNum = 0;
     private static final int N = 60;
     private static int stop = 0;
-
-    // This fixed amount of memory is to avoid repeatedly declaring
-    // new arrays every time a cell's neighbours are to be retrieved.
-    private static Cell[] reusableStorage = new Cell[8];
+    private static Cell[] cellStorage = new Cell[8];
 
     private int Row;
     private int Col;
@@ -37,14 +24,14 @@ public class Minesweeper extends JFrame{
     private JFrame  frame;
    
     private final ActionListener actionListener = actionEvent -> {
-        Object source = actionEvent.getSource();
-            handleCell((Cell) source);       
+        Object event = actionEvent.getSource();
+            setCell((Cell) event);       
     };
     
     private class Cell extends JButton {
         private final int row;
         private final int col;
-        private       int value;
+        private int value;
 
         Cell(final int row, final int col,
              final ActionListener actionListener) {
@@ -54,28 +41,17 @@ public class Minesweeper extends JFrame{
             setText("");      
         }
 
-        int getValue() {
-            return value;
-        }
-
         void setValue(int value) {
             this.value = value;
         }
 
-        boolean isAMine() {
+        boolean trueMine() {
             return value == MINE;
-        }
-
-        void reset() {
-            setValue(0);
-            setEnabled(true);
-            setText("");
-            
         }
 
         void reveal() {
             setEnabled(false);
-            if(isAMine()) {
+            if(trueMine()) {
             	setText(" ");
             	setBackground(Color.RED);
             }else {
@@ -85,34 +61,38 @@ public class Minesweeper extends JFrame{
             
         }
         
-        void updateNeighbourCount() {
-            getNeighbours(reusableStorage);
-            for (Cell neighbour : reusableStorage) {
-                if (neighbour == null) {
+        void reset() {
+            setValue(0);
+            setEnabled(true);
+            setText("");
+        }
+        
+        void nbrCntUpdate() {
+            getnbrs(cellStorage);
+            for (Cell nbr : cellStorage) {
+                if (nbr == null) {
                     break;
                 }
-                if (neighbour.isAMine()) {
+                if (nbr.trueMine()) {
                     value++;
                 }
             }
         }
 
-        void getNeighbours(final Cell[] container) {
-            // Empty all elements first
-            for (int i = 0; i < reusableStorage.length; i++) {
-                reusableStorage[i] = null;
+        void getnbrs(final Cell[] container) {
+            for (int i = 0; i < cellStorage.length; i++) {
+                cellStorage[i] = null;
             }
 
             int index = 0;
 
-            for (int rowOffset = -1; rowOffset <= 1; rowOffset++) {
-                for (int colOffset = -1; colOffset <= 1; colOffset++) {
-                    // Make sure that we don't count ourselves
-                    if (rowOffset == 0 && colOffset == 0) {
+            for (int cancelRow = -1; cancelRow <= 1; cancelRow++) {
+                for (int cancelCol = -1; cancelCol <= 1; cancelCol++) {
+                    if (cancelRow == 0 && cancelCol == 0) {
                         continue;
                     }
-                    int rowValue = row + rowOffset;
-                    int colValue = col + colOffset;
+                    int rowValue = row + cancelRow;
+                    int colValue = col + cancelCol;
 
                     if (rowValue < 0 || rowValue >= Row
                         || colValue < 0 || colValue >= Col) {
@@ -123,23 +103,6 @@ public class Minesweeper extends JFrame{
                 }
             }
         }
-        
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) return true;
-            if (obj == null || getClass() != obj.getClass())
-                return false;
-            Cell cell = (Cell) obj;
-            return row == cell.row &&
-                   col == cell.col;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(row, col);
-        }
-
     }
     
 
@@ -164,10 +127,8 @@ public class Minesweeper extends JFrame{
         frame.setLayout(new BorderLayout());
 
         
-        initializeGrid();
-       
-        // right click - flag (RED)
-        // 모든 버튼에 mouseListener 을 추가해줌
+        resetBoard();
+
         
         for(Cell[] i:cells) {
         	for(Cell j:i) {
@@ -190,7 +151,7 @@ public class Minesweeper extends JFrame{
         // 실 지뢰개수
         for(int row = 0; row < Row; row++) {
         	for(int col = 0; col < Col; col++) {
-        		if(cells[row][col].isAMine() == true) {
+        		if(cells[row][col].trueMine() == true) {
         			realMineNum ++;
         		}
         	}
@@ -228,57 +189,54 @@ public class Minesweeper extends JFrame{
  
     	// timer
     	
-    	JTextField tf = new JTextField(8);
-    	tf.setEditable(false);
+    	JTextField countText = new JTextField(8);
+    	countText.setEditable(false);
 
-    	
-    	
     	Timer t = new Timer(1000, new ActionListener() {
-    	    private int hours;
-    	    private int minutes;
-    	    private int seconds;
+    	    private int hr;
+    	    private int min;
+    	    private int sec;
     	    private String hour;
     	    private String minute;
     	    private String second;
     	    
     	    public void actionPerformed(ActionEvent e) {
 
-    	        NumberFormat formatter = new DecimalFormat("00");
-    	        if (seconds == N) {
-    	            seconds = 00;
-    	            minutes++;
+    	        NumberFormat format = new DecimalFormat("00");
+    	        if (sec == N) {
+    	            sec = 00;
+    	            min++;
     	        }
 
-    	        if (minutes == N) {
-    	            minutes = 00;
-    	            hours++;
+    	        if (min == N) {
+    	            min = 00;
+    	            hr++;
     	        }
-    	        hour = formatter.format(hours);
-    	        minute = formatter.format(minutes);
-    	        second = formatter.format(seconds);
-    	        tf.setText(String.valueOf(hour + ":" + minute + ":" + second));
-    	        seconds++;
+    	        hour = format.format(hr);
+    	        minute = format.format(min);
+    	        second = format.format(sec);
+    	        countText.setText(String.valueOf(hour + ":" + minute + ":" + second));
+    	        sec++;
     	        
     	        if(stop == 1) {
-    	        	seconds--;
+    	        	sec--;
     	        }
     	    }
     	    
     	});
     	
 
-        final JToggleButton b = new JToggleButton("start");
-        b.addItemListener(new ItemListener() {
+        final JToggleButton btn = new JToggleButton("start");
+        btn.addItemListener(new ItemListener() {
 
-        	@Override
             public void itemStateChanged(ItemEvent e) {
             
-                if (b.isSelected()) {
+                if (btn.isSelected()) {
                     t.start();
-                    b.setText("stop");
+                    btn.setText("stop");
                 } else {
                     t.stop();
-                    b.setText("start");
+                    btn.setText("start");
                 }
 
             }
@@ -286,8 +244,8 @@ public class Minesweeper extends JFrame{
         
     	t.setInitialDelay(0);
 
-    	mb.add(tf);
-    	mb.add(b);
+    	mb.add(countText);
+    	mb.add(btn);
     	frame.add(mb, BorderLayout.NORTH);
     	
 
@@ -320,11 +278,10 @@ public class Minesweeper extends JFrame{
 		// menu - save
 		ActionListener save = new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				
+				File myObj = new File("C:\\Users\\Suemin\\Minesweeper_jam.dat");
 				try {
-					File myObj = new File("C:\\Users\\Suemin\\Minesweeper_play.dat");
 					if(myObj.createNewFile()) {
-						System.out.println("Game saved: " + myObj.getName());
+						System.out.println("Game saved at C:\\Users\\Suemin\\" + myObj.getName());
 					} else {
 						System.out.println("Game saved.");
 					}
@@ -338,7 +295,14 @@ public class Minesweeper extends JFrame{
 		// menu - open
 		ActionListener open= new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				JFrame window = new JFrame();
+				JFileChooser fileChooser = new JFileChooser();
+				int result = fileChooser.showOpenDialog(window);
 				
+				if(result == JFileChooser.APPROVE_OPTION) {
+					File selectedFile = fileChooser.getSelectedFile();
+					System.out.println(selectedFile+ " was loaded.");
+				}
 			}
 		};
 		op.addActionListener(open);
@@ -347,7 +311,6 @@ public class Minesweeper extends JFrame{
     
     // new Window    
 	class newWindow extends JFrame {
-	    // 버튼이 눌러지면 만들어지는 새 창을 정의한 클래스
 	    newWindow() {
 	        setTitle("레벨 선택");
 	        
@@ -405,23 +368,20 @@ public class Minesweeper extends JFrame{
 
 	}
     
-    private void initializeGrid() {
+    private void resetBoard() {
         Container grid = new Container();
         grid.setLayout(new GridLayout(Row, Col));
 
         for (int row = 0; row < Row; row++) {
             for (int col = 0; col < Col; col++) {
                 cells[row][col] = new Cell(row, col, actionListener);
-                grid.add(cells[row][col]);
-                
-                
+                grid.add(cells[row][col]); 
             }
         }
         
-        createMines();
-        
-        frame.add(grid, BorderLayout.CENTER);
-        
+        createMine();
+
+        frame.add(grid, BorderLayout.CENTER);  
     }
 
     
@@ -434,76 +394,66 @@ public class Minesweeper extends JFrame{
         }
     }
 
-    private void createMines() {
+    private void createMine() {
     	realMineNum = 0;
         resetAllCells();
 
-        final int mineCount = Row;
+        
         final Random random    = new Random();
-
-        // Map all (row, col) pairs to unique integers
-        Set<Integer> positions = new HashSet<>(Row * Col);
+        
+        Set<Integer> locations = new HashSet<>(Row * Col);
         for (int row = 0; row < Row; row++) {
             for (int col = 0; col < Col; col++) {
-              positions.add(row * Row + col);
+              locations.add(row * Row + col);
             }
-          
         }
         for(int col = 0; col < Col; col++) {
         	for(int row = 0; row < Row; row++) {
-        		positions.add(col * Col + row);
+        		locations.add(col * Col + row);
         	}
         }
 
-        // Initialize mines
-        for (int index = 0; index < mineCount; index++) {
-            int choice = random.nextInt(positions.size());
+        // 지뢰 초기화
+        for (int index = 0; index < Row; index++) {
+            int choice = random.nextInt(locations.size());
             int row    = choice / Row;
             int col    = choice % Col;
             cells[row][col].setValue(MINE);
-            positions.remove(choice);
+            locations.remove(choice);
         }
 
-        // Initialize neighbour counts
+        // neighbor cells 초기화
         for (int row = 0; row < Row; row++) {
             for (int col = 0; col < Col; col++) {
-                if (!cells[row][col].isAMine()) {
-                    cells[row][col].updateNeighbourCount();
+                if (!cells[row][col].trueMine()) {
+                    cells[row][col].nbrCntUpdate();
                 }
             }
         }
     }
     
 
-    
-    private void handleCell(Cell cell) {
-        if (cell.isAMine()) {
+    private void setCell(Cell cell) {
+        if (cell.trueMine()) {
             cell.setForeground(Color.RED);
             cell.reveal();
             stop = 1;
-            revealBoardAndDisplay("You clicked on a mine!");
-            
-            
+            revealMine("지뢰를 밟아버렸습니다!");
         }
-//여러칸이 열리는 기능        
-//        if (cell.getValue() == 0) {
-//            Set<Cell> positions = new HashSet<>();
-//            positions.add(cell);
-//            cascade(positions);
-//        } 
+
         else {
             cell.reveal();
         }  
         
-        checkForWin();    
+        checkWon();    
     }
     
 
-    private void revealBoardAndDisplay(String message) {
+    private void revealMine(String message) {
         for (int row = 0; row < Row; row++) {
             for (int col = 0; col < Col; col++) {
 
-        	    if(cells[row][col].isAMine()) {
+        	    if(cells[row][col].trueMine()) {
         	    	cells[row][col].reveal();
         	    }
                 cells[row][col].setEnabled(true);
@@ -512,54 +462,27 @@ public class Minesweeper extends JFrame{
         }
 
         JOptionPane.showMessageDialog(
-                frame, message, "Game Over",
+                frame, message, "Game over",
                 JOptionPane.ERROR_MESSAGE
         );
-
-       // createMines();    
-        
-        
-             
+    
     }
 
-    private void cascade(Set<Cell> positionsToClear) {
-        while (!positionsToClear.isEmpty()) {
-            // Set does not have a clean way for retrieving
-            // a single element. This is the best way I could think of.
-            Cell cell = positionsToClear.iterator().next();
-            positionsToClear.remove(cell);
-            cell.reveal();
-
-            cell.getNeighbours(reusableStorage);
-            for (Cell neighbour : reusableStorage) {
-                if (neighbour == null) {
-                    break;
-                }
-                if (neighbour.getValue() == 0
-                    && neighbour.isEnabled()) {
-                    positionsToClear.add(neighbour);
-                } else {
-                    neighbour.reveal();
-                }
-            }
-        }
-    }
-
-    private void checkForWin() {
-        boolean won = true;
-        outer:
+    private void checkWon() {
+        boolean win = true;
+        loop:
         for (Cell[] cellRow : cells) {
             for (Cell cell : cellRow) {
-                if (!cell.isAMine() && cell.isEnabled()) {
-                    won = false;
-                    break outer;
+                if (!cell.trueMine() && cell.isEnabled()) {
+                    win = false;
+                    break loop;
                 }
             }
         }
 
-        if (won) {
+        if (win) {
             JOptionPane.showMessageDialog(
-                    frame, "You have won!", "Congratulations",
+                    frame, "축하합니다! 지뢰를 전부 제거했습니다!", "게임 종료",
                     JOptionPane.INFORMATION_MESSAGE
             );
             stop = 1;
